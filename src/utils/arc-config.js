@@ -1,40 +1,42 @@
 // ARC Network Configuration (Testnet)
+const ENV = typeof import.meta !== 'undefined' ? import.meta.env : process.env;
+
 export const ARC_CONFIG = {
-  chainId: 5042002, // ARC Testnet Chain ID
-  chainName: 'ARC Network Testnet',
+  chainId: ENV.VITE_CHAIN_ID ? Number(ENV.VITE_CHAIN_ID) : 5042002,
+  chainName: ENV.VITE_CHAIN_NAME || 'ARC Network Testnet',
   nativeCurrency: {
-    name: 'USD Coin',
-    symbol: 'USDC',
-    decimals: 6,
+    name: ENV.VITE_NATIVE_NAME || 'USD Coin',
+    symbol: ENV.VITE_NATIVE_SYMBOL || 'USDC',
+    decimals: ENV.VITE_NATIVE_DECIMALS ? Number(ENV.VITE_NATIVE_DECIMALS) : 6,
   },
-  rpcUrls: ['http://rpc.testnet.arc.network'],
-  blockExplorerUrls: ['http://testnet.arcscan.app'],
-  
+  rpcUrls: [ENV.VITE_RPC_URL || 'http://rpc.testnet.arc.network'],
+  blockExplorerUrls: [ENV.VITE_EXPLORER_URL || 'http://testnet.arcscan.app'],
+
   gasConfig: {
-    baseFee: '1000000',
-    priorityFee: '500000',
+    baseFee: ENV.VITE_BASE_FEE || '1000000',
+    priorityFee: ENV.VITE_PRIORITY_FEE || '500000',
     gasLimit: {
-      trade: 300000,
-      createMarket: 2000000,
-      resolve: 150000,
-      deposit: 200000,
+      trade: ENV.VITE_GAS_TRADE ? Number(ENV.VITE_GAS_TRADE) : 300000,
+      createMarket: ENV.VITE_GAS_CREATE ? Number(ENV.VITE_GAS_CREATE) : 2000000,
+      resolve: ENV.VITE_GAS_RESOLVE ? Number(ENV.VITE_GAS_RESOLVE) : 150000,
+      deposit: ENV.VITE_GAS_DEPOSIT ? Number(ENV.VITE_GAS_DEPOSIT) : 200000,
     },
   },
 
   executionLayer: {
     evmCompatible: true,
-    blockTime: 2,
-    finality: 12,
+    blockTime: ENV.VITE_BLOCK_TIME ? Number(ENV.VITE_BLOCK_TIME) : 2,
+    finality: ENV.VITE_FINALITY ? Number(ENV.VITE_FINALITY) : 12,
   },
 };
 
 export const CONTRACT_ADDRESSES = {
-  predictARC: '0x1234567890abcdef1234567890abcdef12345678',
-  marketFactory: '0x2345678901abcdef2345678901abcdef23456789',
-  oracleRegistry: '0x3456789012abcdef3456789012abcdef34567890',
-  usdcToken: '0x4567890123abcdef4567890123abcdef45678901',
-  cctpMessageTransmitter: '0x5678901234abcdef5678901234abcdef56789012',
-  cctpTokenMessenger: '0x6789012345abcdef6789012345abcdef67890123',
+  predictARC: ENV.VITE_PREDICT_ARC_ADDRESS || '0x1234567890abcdef1234567890abcdef12345678',
+  marketFactory: ENV.VITE_MARKET_FACTORY_ADDRESS || '0x2345678901abcdef2345678901abcdef23456789',
+  oracleRegistry: ENV.VITE_ORACLE_REGISTRY_ADDRESS || '0x3456789012abcdef3456789012abcdef34567890',
+  usdcToken: ENV.VITE_USDC_ADDRESS || '0x4567890123abcdef4567890123abcdef45678901',
+  cctpMessageTransmitter: ENV.VITE_CCTP_MESSAGE_TRANSMITTER || '0x5678901234abcdef5678901234abcdef56789012',
+  cctpTokenMessenger: ENV.VITE_CCTP_TOKEN_MESSENGER || '0x6789012345abcdef6789012345abcdef67890123',
 };
 
 export const CCTP_CONFIG = {

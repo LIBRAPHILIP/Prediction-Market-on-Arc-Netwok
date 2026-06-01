@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Zap, Menu, X, LogOut, Wallet } from 'lucide-react';
+import { Zap, Menu, X, LogOut, Wallet, RefreshCw } from 'lucide-react';
 import useWalletStore from '../../hooks/useWallet';
 import useAppStore from '../../store';
 import { shortenAddress, formatNumber } from '../../utils/helpers';
 
 export default function Navbar() {
-  const { address, isConnected, balance, connect, disconnect } = useWalletStore();
+  const { address, isConnected, balance, connect, disconnect, refreshBalance } = useWalletStore();
   const { isDepositModalOpen, setDepositModalOpen, setWalletModalOpen, isSidebarOpen, toggleSidebar } = useAppStore();
   const [profileOpen, setProfileOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleConnect = async () => {
     try {
@@ -66,7 +67,29 @@ export default function Navbar() {
                 </button>
 
                 {profileOpen && (
-                  <div className="absolute right-0 mt-2 w-48 glass-card rounded-xl overflow-hidden">
+                  <div className="absolute right-0 mt-2 w-56 glass-card rounded-xl overflow-hidden">
+                    <div className="px-3 py-2 text-xs text-zinc-500">Balance</div>
+                    <div className="flex items-center gap-2 px-3 py-2">
+                      <div className="flex-1 font-mono text-mint text-sm">{formatNumber(parseFloat(balance), 2)} USDC</div>
+                      <button
+                        onClick={async () => {
+                          setIsRefreshing(true);
+                          try {
+                            await refreshBalance();
+                          } catch (e) {
+                            console.error('Refresh failed', e);
+                          }
+                          setIsRefreshing(false);
+                        }}
+                        className="p-2 rounded hover:bg-obsidian-700/40 transition"
+                        aria-label="Refresh balance"
+                      >
+                        <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                      </button>
+                    </div>
+
+                    <div className="border-t border-white/[0.03]"></div>
+
                     <button
                       onClick={() => {
                         disconnect();

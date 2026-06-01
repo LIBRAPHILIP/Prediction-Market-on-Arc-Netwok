@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { ethers } from 'ethers';
-import { ARC_CONFIG } from '../utils/arc-config';
+import { ARC_CONFIG, CONTRACT_ADDRESSES } from '../utils/arc-config';
+import { USDC_ABI } from '../contracts/abis';
 
 const useWalletStore = create((set, get) => ({
   address: null,
@@ -29,14 +30,24 @@ const useWalletStore = create((set, get) => ({
         await get().switchToARC();
       }
 
-      const balance = await provider.getBalance(address);
+      // Read USDC (6 decimals) balance instead of native ETH balance
+      const usdcContract = new ethers.Contract(CONTRACT_ADDRESSES.usdcToken, USDC_ABI, provider);
+      let usdcBalance = '0';
+      try {
+        const bal = await usdcContract.balanceOf(address);
+        usdcBalance = ethers.formatUnits(bal, ARC_CONFIG.nativeCurrency.decimals);
+      } catch (e) {
+        // Fallback to native balance if token call fails
+        const nativeBal = await provider.getBalance(address);
+        usdcBalance = ethers.formatUnits(nativeBal, ARC_CONFIG.nativeCurrency.decimals);
+      }
 
       set({
         address,
         provider,
         signer,
         chainId: Number(network.chainId),
-        balance: ethers.formatUnits(balance, 6),
+        balance: usdcBalance,
         isConnected: true,
         isConnecting: false,
       });
@@ -49,11 +60,28 @@ const useWalletStore = create((set, get) => ({
         }
       });
 
-      window.ethereum.on('chainChanged', (chainId) => {
-        if (Number(chainId) !== ARC_CONFIG.chainId) {
-          get().switchToARC();
+      window.ethereum.on('chainChanged', async (chainId) => {
+        const numeric = Number(chainId);
+        set({ chainId: numeric });
+        if (numeric !== ARC_CONFIG.chainId) {
+          // Prompt switch back to ARC Network
+          try {
+            await get().switchToARC();
+          } catch (e) {
+            console.warn('Failed to switch to ARC:', e);
+          }
+        } else {
+          // If switched to ARC, refresh provider and balance
+          try {
+            const provider = new ethers.BrowserProvider(window.ethereum);
+            set({ provider });
+            const usdcContract = new ethers.Contract(CONTRACT_ADDRESSES.usdcToken, USDC_ABI, provider);
+            const bal = await usdcContract.balanceOf(get().address);
+            set({ balance: ethers.formatUnits(bal, ARC_CONFIG.nativeCurrency.decimals) });
+          } catch (e) {
+            console.warn('Failed to refresh USDC balance after chain change', e);
+          }
         }
-        set({ chainId: Number(chainId) });
       });
     } catch (error) {
       set({ isConnecting: false });
@@ -102,8 +130,14 @@ const useWalletStore = create((set, get) => ({
     const { provider, address } = get();
     if (!provider || !address) return;
 
-    const balance = await provider.getBalance(address);
-    set({ balance: ethers.formatUnits(balance, 6) });
+    try {
+      const usdcContract = new ethers.Contract(CONTRACT_ADDRESSES.usdcToken, USDC_ABI, provider);
+      const bal = await usdcContract.balanceOf(address);
+      set({ balance: ethers.formatUnits(bal, ARC_CONFIG.nativeCurrency.decimals) });
+    } catch (e) {
+      const nativeBal = await provider.getBalance(address);
+      set({ balance: ethers.formatUnits(nativeBal, ARC_CONFIG.nativeCurrency.decimals) });
+    }
   },
 }));
 
